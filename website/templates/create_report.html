@@ -1,0 +1,16 @@
+{% extends "base.html" %} 
+{% block title %}
+Creating New Reports
+{% endblock %} 
+
+{% block content %}
+<h1 align="center">Create a New Report</h1>
+
+<form method="POST" action="{{ url_for('views.create_report') }}">
+  <textarea name="report" id="report" class="form-control" placeholder="Enter your report here..."></textarea>
+  <br />
+  <div align="center">
+    <button type="submit" class="btn btn-primary">Submit Report</button>
+  </div>
+</form>
+{% endblock %}

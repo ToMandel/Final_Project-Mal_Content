@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}
+Rules
+{% endblock %}
+{% block content %}
+<h1 align="center">Rules</h1>
+
+<ul class="list-group list-group-flush" id="rules">
+  {% for rule in rules %}
+  <li class="list-group-item d-flex justify-content-between align-items-center">
+    {{ rule.data }}
+    <div>
+      <button type="button" class="close" onClick="deleteRule('{{ rule.id }}')">
+        <span aria-hidden="true">&times;</span>
+      </button>
+      <a href="{{ url_for('views.update_rule', rule_id=rule.id) }}" class="btn btn-secondary btn-sm">Edit</a>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+<form method="GET" action="{{ url_for('views.create_rule') }}">
+  <br />
+  <div align="center">
+    <button type="submit" class="btn btn-primary">Add New Rules</button>
+  </div>
+</form>
+{% endblock %}

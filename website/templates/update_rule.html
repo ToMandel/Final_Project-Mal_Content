@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}
+Update Rule
+{% endblock %}
+
+{% block content %}
+<h1 align="center">Edit Rule</h1>
+
+<form method="POST" action="{{ url_for('views.update_rule', rule_id=rule.id) }}">
+  <div class="form-group">
+    <label for="current-rule">Current Rule</label>
+    <textarea id="current-rule" class="form-control" rows="2" readonly>{{ rule.data }}</textarea>
+  </div>
+  <div class="form-group">
+    <label for="new-rule">New Content</label>
+    <textarea name="rule" id="new-rule" class="form-control" rows="5" placeholder="Enter your new content here..."></textarea>
+  </div>
+  <div align="center">
+    <button type="submit" class="btn btn-primary">Update Rule</button>
+  </div>
+</form>
+{% endblock %}
