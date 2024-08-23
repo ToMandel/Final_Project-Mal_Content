@@ -1,0 +1,7 @@
+.list-group-item.border-left-red {
+    border-left: 10px solid red !important;
+}
+
+.list-group-item.border-left-green {
+    border-left: 10px solid green !important;
+}

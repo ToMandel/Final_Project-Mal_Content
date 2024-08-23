@@ -12,8 +12,8 @@ password = os.environ.get("MONGODB_PWD")
 if not password:
     raise Exception("MONGODB_PWD not found in environment variables")
 
-connection_string = f"mongodb://localhost:27017/MalCont_DB"
-# connection_string = f"mongodb+srv://ToMandel:{password}@malcont.buw02kc.mongodb.net/MalCont_DB?retryWrites=true&w=majority"
+# connection_string = f"mongodb://localhost:27017/MalCont_DB"
+connection_string = f"mongodb+srv://ToMandel:{password}@malcont.buw02kc.mongodb.net/MalCont_DB?retryWrites=true&w=majority"
 
 def create_app():
     app = Flask(__name__)
@@ -38,7 +38,3 @@ def create_app():
         return User.objects(id=user_id).first()
 
     return app
-
-if __name__ == '__main__':
-    app = create_app()
-    app.run(debug=True)

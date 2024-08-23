@@ -1,0 +1,45 @@
+{% extends "./base.html" %} 
+{% block title %}
+Creating New Rule
+{% endblock %} 
+
+{% block content %}
+<h1 align="center">Create a New Rule</h1>
+
+<form method="POST" action="{{ url_for('views.create_rule') }}">
+  <textarea name="rule" id="rule" class="form-control" placeholder="Enter your rule here..." required></textarea>
+  <br />
+
+  <h5>Select Rule Type:</h5>
+  <div class="btn-group">
+    <button type="button" id="phraseBtn" class="btn btn-outline-primary" onclick="selectType('phrase')">Phrase</button>
+    <button type="button" id="keywordBtn" class="btn btn-outline-primary" onclick="selectType('keyword')">Keyword</button>
+    <button type="button" id="contextualBtn" class="btn btn-outline-primary" onclick="selectType('contextual')">Contextual</button>
+  </div>
+  <input type="hidden" name="data_type" id="data_type" required>
+
+  <br /><br />
+  <div align="center">
+    <button type="submit" class="btn btn-primary">Submit Rule</button>
+  </div>
+</form>
+
+<script>
+  function selectType(type) {
+    // Reset all button classes
+    const buttons = document.querySelectorAll('.btn-group button');
+    buttons.forEach(button => {
+      button.classList.remove('btn-primary');
+      button.classList.add('btn-outline-primary');
+    });
+
+    // Activate the selected button
+    const selectedButton = document.getElementById(type + 'Btn');
+    selectedButton.classList.remove('btn-outline-primary');
+    selectedButton.classList.add('btn-primary');
+
+    // Set the hidden input value
+    document.getElementById('data_type').value = type;
+  }
+</script>
+{% endblock %}

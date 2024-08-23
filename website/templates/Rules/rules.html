@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "./base.html" %}
 {% block title %}
 Rules
 {% endblock %}
@@ -8,7 +8,10 @@ Rules
 <ul class="list-group list-group-flush" id="rules">
   {% for rule in rules %}
   <li class="list-group-item d-flex justify-content-between align-items-center">
-    {{ rule.data }}
+    <div>
+      <strong>{{ rule.data }}</strong> <br>
+      <small class="text-muted">{{ rule.data_type|capitalize }}</small>
+    </div>
     <div>
       <button type="button" class="close" onClick="deleteRule('{{ rule.id }}')">
         <span aria-hidden="true">&times;</span>
