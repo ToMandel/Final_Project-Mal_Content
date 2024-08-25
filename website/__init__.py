@@ -4,7 +4,11 @@ from dotenv import load_dotenv, find_dotenv
 import os
 from flask_login import LoginManager
 from mongoengine import connect
-from .models import User
+from .models import User  # Import the User model
+from tensorflow.keras.models import load_model  # Import load_model from Keras
+import pickle
+import re  # If you're using regular expressions in the preprocessing functions
+
 
 load_dotenv(find_dotenv())
 password = os.environ.get("MONGODB_PWD")
@@ -12,8 +16,8 @@ password = os.environ.get("MONGODB_PWD")
 if not password:
     raise Exception("MONGODB_PWD not found in environment variables")
 
-# connection_string = f"mongodb://localhost:27017/MalCont_DB"
-connection_string = f"mongodb+srv://ToMandel:{password}@malcont.buw02kc.mongodb.net/MalCont_DB?retryWrites=true&w=majority"
+# Use this connection string to connect to your local MongoDB instance
+connection_string = "mongodb://localhost:27017"
 
 def create_app():
     app = Flask(__name__)
@@ -22,6 +26,15 @@ def create_app():
 
     # Connect MongoEngine to your MongoDB and specify the database name
     connect(host=connection_string)
+
+    # Load your ML model and TF-IDF vectorizer
+    model = load_model(r'C:\Users\talme\MalCont\website\model.keras')
+    with open(r'C:\Users\talme\MalCont\website\tokenizer.pkl', 'rb') as tokenizer_file:
+        tfidf_vectorizer = pickle.load(tokenizer_file)
+
+    # Store them in the app config
+    app.config['ML_MODEL'] = model
+    app.config['TFIDF_VECTORIZER'] = tfidf_vectorizer  # Updated to reflect the correct variable name
 
     from .views import views
     from .auth import auth

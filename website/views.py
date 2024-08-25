@@ -1,8 +1,10 @@
-from flask import Blueprint, redirect, render_template, request, flash, jsonify, url_for
-from flask_login import login_required, current_user
-from .models import Report, Rule, RuleType, ReportType
-from bson import ObjectId
-import json
+from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, current_app
+from flask_login import login_user, login_required, logout_user, current_user
+from .models import User, Report, Rule, RuleType, ReportType
+import re  # Import the regular expressions module
+
+# Other imports and your Flask routes/functions follow here...
+
 
 views = Blueprint('views', __name__)
 
@@ -145,9 +147,50 @@ def delete_report():
     flash('Failed to delete report!', category='error')
     return jsonify({'success': False})
 
-# Placeholder function for ML model prediction
+from flask import current_app
+
+CHARS_TO_REMOVE = '!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n“”’\'∞θ÷α•à−β∅³π‘₹´°£€\×™√²—'
+trans_table = str.maketrans('', '', CHARS_TO_REMOVE)
+
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r"what's", "what is ", text)
+    text = re.sub(r"\'s", " ", text)
+    text = re.sub(r"\'ve", " have ", text)
+    text = re.sub(r"can't", " cannot ", text)
+    text = re.sub(r"n't", " not ", text)
+    text = re.sub(r"i'm", "i am ", text)
+    text = re.sub(r"\'re", " are ", text)
+    text = re.sub(r"\'d", " would ", text)
+    text = re.sub(r"\'ll", " will ", text)
+    text = re.sub(r"\'scuse", " excuse ", text)
+    
+    # Preserve more of the original text structure by not replacing all non-word characters
+    # text = re.sub(r'\W', ' ', text)  # Comment out or remove this line if you find it alters important words
+
+    text = re.sub(r'\s+', ' ', text)
+    text = text.translate(trans_table)
+    text = text.strip()
+    
+    return text
+
+
 def ml_model_predict(report_data):
-    # Implement your ML model logic here to return 'toxic' or 'non-toxic'
-    # Example:
-    # return 'toxic' if model.predict(report_data) == 1 else 'non-toxic'
-    return ReportType.TOXIC
+    # Access the model and TF-IDF vectorizer from app config
+    model = current_app.config['ML_MODEL']
+    tfidf_vectorizer = current_app.config['TFIDF_VECTORIZER']
+
+    # Clean the input text
+    cleaned_text = clean_text(report_data)
+    print(f"Cleaned Text: {cleaned_text}")
+
+    # Transform the input text using the TF-IDF vectorizer
+    transformed_data = tfidf_vectorizer.transform([cleaned_text])
+    print(f"TF-IDF Transformed Data: {transformed_data}")
+
+    # Predict using the loaded model
+    prediction = model.predict(transformed_data)
+    print(f"Model Prediction: {prediction}")
+
+    # Assuming the model returns a probability, and you classify as 'toxic' if above a threshold
+    return ReportType.TOXIC if prediction > 0.5 else ReportType.NON_TOXIC
