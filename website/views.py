@@ -1,12 +1,15 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, current_app
-from flask_login import login_user, login_required, logout_user, current_user
+from flask_login import login_required, current_user
 from .models import User, Report, Rule, RuleType, ReportType
-import re  # Import the regular expressions module
-
-# Other imports and your Flask routes/functions follow here...
-
+import re
 
 views = Blueprint('views', __name__)
+
+# Dashboard route
+@views.route('/dashboard', methods=['GET'])
+@login_required
+def dashboard():
+    return render_template('dashboard.html', user=current_user)
 
 # RULES
 @views.route('/rules', methods=['GET'])
@@ -29,19 +32,18 @@ def create_rule():
         else:
             try:
                 new_rule = Rule(data=rule, data_type=data_type, user_id=current_user.id)
-                new_rule.save()  # Save the rule using MongoEngine
+                new_rule.save()
                 flash('Rule added!', category='success')
             except Exception as e:
                 flash('An error occurred while adding the rule.', category='error')
-            return redirect(url_for('views.show_rules'))  # Redirect to avoid form resubmission
+            return redirect(url_for('views.show_rules'))
 
     return render_template("./Rules/create_rule.html", user=current_user, RuleType=RuleType)
 
-
-@views.route('/update-rule/<rule_id>', methods=['GET', 'POST', 'PUT'])
+@views.route('/update-rule/<rule_id>', methods=['GET', 'POST'])
 @login_required
 def update_rule(rule_id):
-    rule = Rule.objects(id=ObjectId(rule_id), user_id=current_user.id).first()
+    rule = Rule.objects(id=rule_id, user_id=current_user.id).first()
     if not rule:
         flash('Rule not found!', category='error')
         return redirect(url_for('views.show_rules'))
@@ -64,20 +66,18 @@ def update_rule(rule_id):
 
     return render_template("./Rules/update_rule.html", user=current_user, rule=rule)
 
-
 @views.route('/delete-rule', methods=['POST'])
 @login_required
 def delete_rule():
     data = json.loads(request.data)
-    rule = Rule.objects(id=ObjectId(data.get('ruleId'))).first()
+    rule = Rule.objects(id=data.get('ruleId')).first()
     if rule and rule.user_id.id == current_user.id:
-        rule.delete()  # Delete the rule from the rules collection
+        rule.delete()
         flash('Rule deleted!', category='success')
         return jsonify({'success': True})
 
     flash('Failed to delete rule!', category='error')
     return jsonify({'success': False})
-
 
 # REPORTS
 @views.route('/', methods=['GET'])
@@ -93,29 +93,28 @@ def create_report():
         report_data = request.form.get('report')
 
         if not report_data or len(report_data.strip()) < 1:
-            flash('Report is too short!', category='error')
-        else:
-            # Call the ML model to predict if the report is toxic or non-toxic
-            report_type = ml_model_predict(report_data)  # Replace with your ML model function
+            flash('Report is too short!', 'error')
+            return jsonify({'toxic': False}), 400
 
-            try:
-                new_report = Report(
-                    data=report_data, 
-                    report_type=report_type,  # Set by the ML model
-                    user_id=current_user.id
-                )
-                new_report.save()  # Save the report using MongoEngine
-                flash('Report added!', category='success')
-            except Exception as e:
-                flash('An error occurred while adding the report.', category='error')
-            return redirect(url_for('views.show_reports'))  # Redirect to avoid form resubmission
+        report_type = ml_model_predict(report_data)
+        try:
+            new_report = Report(
+                data=report_data, 
+                report_type=report_type,  
+                user_id=current_user.id
+            )
+            new_report.save()
+            return jsonify({'toxic': report_type == ReportType.TOXIC}), 200
+
+        except Exception as e:
+            flash('An error occurred while adding the report.', 'error')
+            return jsonify({'toxic': False}), 500
 
     return render_template("./Reports/create_report.html", user=current_user)
-
-@views.route('/update-report/<report_id>', methods=['GET','POST', 'PUT'])
+@views.route('/update-report/<report_id>', methods=['GET', 'POST'])
 @login_required
 def update_report(report_id):
-    report = Report.objects(id=ObjectId(report_id), user_id=current_user.id).first()
+    report = Report.objects(id=report_id, user_id=current_user.id).first()
     if not report:
         flash('Report not found!', category='error')
         return redirect(url_for('views.show_reports'))
@@ -138,17 +137,16 @@ def update_report(report_id):
 @login_required
 def delete_report():
     data = json.loads(request.data)
-    report = Report.objects(id=ObjectId(data.get('reportId'))).first()
+    report = Report.objects(id=data.get('reportId')).first()
     if report and report.user_id.id == current_user.id:
-        report.delete()  # Delete the report from the reports collection
+        report.delete()
         flash('Report deleted!', category='success')
         return jsonify({'success': True})
 
     flash('Failed to delete report!', category='error')
     return jsonify({'success': False})
 
-from flask import current_app
-
+# Text processing functions
 CHARS_TO_REMOVE = '!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n“”’\'∞θ÷α•à−β∅³π‘₹´°£€\×™√²—'
 trans_table = str.maketrans('', '', CHARS_TO_REMOVE)
 
@@ -164,61 +162,39 @@ def clean_text(text):
     text = re.sub(r"\'d", " would ", text)
     text = re.sub(r"\'ll", " will ", text)
     text = re.sub(r"\'scuse", " excuse ", text)
-    
-    # Preserve more of the original text structure by not replacing all non-word characters
-    # text = re.sub(r'\W', ' ', text)  # Comment out or remove this line if you find it alters important words
-
     text = re.sub(r'\s+', ' ', text)
     text = text.translate(trans_table)
     text = text.strip()
-    
     return text
 
-
-from flask import current_app
-from .models import Rule, RuleType
-
 def apply_rules(report_data):
-    # Retrieve all rules from the database
     keyword_rules = Rule.objects(data_type=RuleType.KEYWORD)
     phrase_rules = Rule.objects(data_type=RuleType.PHRASE)
     contextual_rules = Rule.objects(data_type=RuleType.CONTEXTUAL)
-    
-    # Check if any keyword rules match the report data
+
     for rule in keyword_rules:
         if rule.data.lower() in report_data.lower():
-            return True  # Found a match, classify as toxic
+            return True
 
-    # Check if any phrase rules match the report data
     for rule in phrase_rules:
         if rule.data.lower() in report_data.lower():
-            return True  # Found a match, classify as toxic
+            return True
 
-    # Check if any contextual rules match the report data
     for rule in contextual_rules:
-        # Implement more complex logic here if needed for contextual matching
         if rule.data.lower() in report_data.lower():
-            return True  # Found a match, classify as toxic
+            return True
 
-    return False  # No rules matched
+    return False
 
 def ml_model_predict(report_data):
-    # Apply rules first
     if apply_rules(report_data):
         return ReportType.TOXIC
 
-    # If no rules matched, proceed with model prediction
     model = current_app.config['ML_MODEL']
     tfidf_vectorizer = current_app.config['TFIDF_VECTORIZER']
 
-    # Clean the input text
     cleaned_text = clean_text(report_data)
-
-    # Transform the input text using the TF-IDF vectorizer
     transformed_data = tfidf_vectorizer.transform([cleaned_text])
-
-    # Predict using the loaded model
     prediction = model.predict(transformed_data)
 
-    # Assuming the model returns a probability, and you classify as 'toxic' if above a threshold
     return ReportType.TOXIC if prediction > 0.5 else ReportType.NON_TOXIC

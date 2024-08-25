@@ -24,7 +24,6 @@ class User(Document, UserMixin):
     role = StringField(max_length=150)
     password = StringField(max_length=500)
     first_name = StringField(max_length=150)
-    # reports = ListField(ReferenceField(Report), default=[])
 
 class Rule(Document):
     meta = {'collection': 'rules'}

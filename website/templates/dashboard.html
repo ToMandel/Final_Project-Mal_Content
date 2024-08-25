@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}
+Dashboard
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 align="center">Dashboard</h1>
+    <div class="row text-center mt-5">
+        <div class="col-md-4">
+            <a href="/" class="btn btn-lg btn-primary">View Reports</a>
+        </div>
+        <div class="col-md-4">
+            <a href="/rules" class="btn btn-lg btn-success">Manage Rules</a>
+        </div>
+        <div class="col-md-4">
+            <a href="/logout" class="btn btn-lg btn-danger">Logout</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

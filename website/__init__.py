@@ -7,8 +7,6 @@ from mongoengine import connect
 from .models import User  # Import the User model
 from tensorflow.keras.models import load_model  # Import load_model from Keras
 import pickle
-import re  # If you're using regular expressions in the preprocessing functions
-
 
 load_dotenv(find_dotenv())
 password = os.environ.get("MONGODB_PWD")
@@ -17,7 +15,7 @@ if not password:
     raise Exception("MONGODB_PWD not found in environment variables")
 
 # Use this connection string to connect to your local MongoDB instance
-connection_string = "mongodb://localhost:27017"
+connection_string = "mongodb://localhost:27017/MalCont_DB"
 
 def create_app():
     app = Flask(__name__)
@@ -34,7 +32,7 @@ def create_app():
 
     # Store them in the app config
     app.config['ML_MODEL'] = model
-    app.config['TFIDF_VECTORIZER'] = tfidf_vectorizer  # Updated to reflect the correct variable name
+    app.config['TFIDF_VECTORIZER'] = tfidf_vectorizer
 
     from .views import views
     from .auth import auth
