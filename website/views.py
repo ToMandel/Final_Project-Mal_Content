@@ -175,22 +175,50 @@ def clean_text(text):
     return text
 
 
+from flask import current_app
+from .models import Rule, RuleType
+
+def apply_rules(report_data):
+    # Retrieve all rules from the database
+    keyword_rules = Rule.objects(data_type=RuleType.KEYWORD)
+    phrase_rules = Rule.objects(data_type=RuleType.PHRASE)
+    contextual_rules = Rule.objects(data_type=RuleType.CONTEXTUAL)
+    
+    # Check if any keyword rules match the report data
+    for rule in keyword_rules:
+        if rule.data.lower() in report_data.lower():
+            return True  # Found a match, classify as toxic
+
+    # Check if any phrase rules match the report data
+    for rule in phrase_rules:
+        if rule.data.lower() in report_data.lower():
+            return True  # Found a match, classify as toxic
+
+    # Check if any contextual rules match the report data
+    for rule in contextual_rules:
+        # Implement more complex logic here if needed for contextual matching
+        if rule.data.lower() in report_data.lower():
+            return True  # Found a match, classify as toxic
+
+    return False  # No rules matched
+
 def ml_model_predict(report_data):
-    # Access the model and TF-IDF vectorizer from app config
+    # Apply rules first
+    if apply_rules(report_data):
+        return ReportType.TOXIC
+
+    # If no rules matched, proceed with model prediction
     model = current_app.config['ML_MODEL']
     tfidf_vectorizer = current_app.config['TFIDF_VECTORIZER']
 
     # Clean the input text
     cleaned_text = clean_text(report_data)
-    print(f"Cleaned Text: {cleaned_text}")
 
     # Transform the input text using the TF-IDF vectorizer
     transformed_data = tfidf_vectorizer.transform([cleaned_text])
-    print(f"TF-IDF Transformed Data: {transformed_data}")
 
     # Predict using the loaded model
     prediction = model.predict(transformed_data)
-    print(f"Model Prediction: {prediction}")
 
     # Assuming the model returns a probability, and you classify as 'toxic' if above a threshold
     return ReportType.TOXIC if prediction > 0.5 else ReportType.NON_TOXIC
