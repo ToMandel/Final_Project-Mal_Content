@@ -15,7 +15,9 @@ if not password:
     raise Exception("MONGODB_PWD not found in environment variables")
 
 # Use this connection string to connect to your local MongoDB instance
-connection_string = "mongodb://localhost:27017/MalCont_DB"
+# connection_string = "mongodb://localhost:27017/MalCont_DB"
+
+connection_string = f"mongodb+srv://ToMandel:{password}@malcont.buw02kc.mongodb.net/MalCont_DB?retryWrites=true&w=majority"
 
 def create_app():
     app = Flask(__name__)
@@ -26,8 +28,8 @@ def create_app():
     connect(host=connection_string)
 
     # Load your ML model and TF-IDF vectorizer
-    model = load_model(r'C:\Users\talme\MalCont\website\model.keras')
-    with open(r'C:\Users\talme\MalCont\website\tokenizer.pkl', 'rb') as tokenizer_file:
+    model = load_model(r'website\model.keras')
+    with open(r'website\tokenizer.pkl', 'rb') as tokenizer_file:
         tfidf_vectorizer = pickle.load(tokenizer_file)
 
     # Store them in the app config

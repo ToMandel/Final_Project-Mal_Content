@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, current_app
+from flask import Blueprint, json, render_template, request, flash, redirect, url_for, jsonify, current_app
 from flask_login import login_required, current_user
 from .models import User, Report, Rule, RuleType, ReportType
 import re
