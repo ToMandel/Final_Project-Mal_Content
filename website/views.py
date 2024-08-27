@@ -58,10 +58,18 @@ def update_rule(rule_id):
             flash('Invalid rule type!', category='error')
         else:
             try:
+                # Update the rule
                 rule.update(data=new_data, data_type=new_data_type)
-                flash('Rule updated!', category='success')
+                
+                # Re-evaluate all reports
+                reports = Report.objects(user_id=current_user.id)
+                for report in reports:
+                    new_report_type = ml_model_predict(report.data)
+                    report.update(report_type=new_report_type)
+                
+                flash('Rule and reports updated!', category='success')
             except Exception as e:
-                flash('An error occurred while updating the rule.', category='error')
+                flash('An error occurred while updating the rule and reports.', category='error')
             return redirect(url_for('views.show_rules'))
 
     return render_template("./Rules/update_rule.html", user=current_user, rule=rule)
@@ -111,6 +119,7 @@ def create_report():
             return jsonify({'toxic': False}), 500
 
     return render_template("./Reports/create_report.html", user=current_user)
+
 @views.route('/update-report/<report_id>', methods=['GET', 'POST'])
 @login_required
 def update_report(report_id):
@@ -125,13 +134,18 @@ def update_report(report_id):
             flash('Report is too short!', category='error')
         else:
             try:
-                report.update(data=new_data)
-                flash('Report updated!', category='success')
+                # Re-evaluate the report based on updated rules
+                new_report_type = ml_model_predict(new_data)
+                
+                # Update the report with the new data and report type
+                report.update(data=new_data, report_type=new_report_type)
+                flash('Report updated and re-evaluated!', category='success')
             except Exception as e:
                 flash('An error occurred while updating the report.', category='error')
             return redirect(url_for('views.show_reports'))
     
     return render_template("./Reports/update_report.html", user=current_user, report=report)
+
 
 @views.route('/delete-report', methods=['POST'])
 @login_required
