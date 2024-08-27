@@ -77,15 +77,27 @@ def update_rule(rule_id):
 @views.route('/delete-rule', methods=['POST'])
 @login_required
 def delete_rule():
-    data = json.loads(request.data)
-    rule = Rule.objects(id=data.get('ruleId')).first()
-    if rule and rule.user_id.id == current_user.id:
-        rule.delete()
-        flash('Rule deleted!', category='success')
-        return jsonify({'success': True})
+    try:
+        data = json.loads(request.data)
+        rule = Rule.objects(id=data.get('ruleId')).first()
+        if rule and rule.user_id.id == current_user.id:
+            rule.delete()
 
-    flash('Failed to delete rule!', category='error')
-    return jsonify({'success': False})
+            # Re-evaluate all reports
+            reports = Report.objects(user_id=current_user.id)
+            for report in reports:
+                new_report_type = ml_model_predict(report.data)
+                report.update(report_type=new_report_type)
+
+            flash('Rule deleted', category='success')
+            return jsonify({'success': True})
+        else:
+            flash('Rule not found or unauthorized!', category='error')
+            return jsonify({'success': False})
+    except Exception as e:
+        flash('An error occurred while deleting the rule.', category='error')
+        return jsonify({'success': False, 'error': str(e)})
+
 
 # REPORTS
 @views.route('/', methods=['GET'])
@@ -147,7 +159,7 @@ def update_report(report_id):
     return render_template("./Reports/update_report.html", user=current_user, report=report)
 
 
-@views.route('/delete-report', methods=['POST'])
+@views.route('/delete-report', methods=['POST', 'DELETE'])
 @login_required
 def delete_report():
     data = json.loads(request.data)
