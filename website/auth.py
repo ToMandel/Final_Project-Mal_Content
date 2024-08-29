@@ -23,6 +23,9 @@ def login():
         else:
             flash('Email does not exist.', category='error')
 
+        # Pass the email and password back to the form in case of failure
+        return render_template("./Auth/login.html", user=current_user, email=email)
+
     return render_template("./Auth/login.html", user=current_user)
 
 @auth.route('/logout')

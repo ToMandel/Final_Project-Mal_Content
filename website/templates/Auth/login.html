@@ -8,22 +8,23 @@
     <div class="form-group">
         <label for="email">Email Address</label>
         <input 
-        type="email" 
-        class="form-control" 
-        id="email" 
-        name="email" 
-        placeholder="Enter Email"
-        />
+            type="email" 
+            class="form-control" 
+            id="email" 
+            name="email" 
+            placeholder="Enter Email"
+            value="{{ request.form.email or '' }}" 
+            required />
     </div>
     <div class="form-group">
         <label for="password">Password</label>
         <input 
-        type="password" 
-        class="form-control" 
-        id="password" 
-        name="password" 
-        placeholder="Enter Password"
-        />
+            type="password" 
+            class="form-control" 
+            id="password" 
+            name="password" 
+            placeholder="Enter Password"
+            required />
     </div>
     <br />
     <button type="login" class="btn btn-primary">Login</button>
