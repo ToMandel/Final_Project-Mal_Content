@@ -13,7 +13,7 @@ class ReportType:
 
 class Report(Document):
     meta = {'collection': 'reports'}
-    data = StringField(max_length=1000)
+    data = StringField(max_length=500)
     report_type = StringField(max_length=20, options=[ReportType.TOXIC, ReportType.NON_TOXIC])
     date = DateTimeField(default=datetime.datetime.now)
     user_id = ReferenceField('User')

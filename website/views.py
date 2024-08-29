@@ -112,9 +112,11 @@ def create_report():
     if request.method == 'POST':
         report_data = request.form.get('report')
 
-        if not report_data or len(report_data.strip()) < 1:
-            flash('Report is too short!', 'error')
-            return jsonify({'toxic': False}), 400
+        if len(report_data) > 500:  # 500 characters as the max length
+            return jsonify({'error': 'Content is too long. Please shorten your content and try again.'}), 400
+
+        if not isinstance(report_data, str) or not report_data.strip():
+            return jsonify({'error': 'Invalid content format. Only text-based content can be analyzed.'}), 400
 
         report_type = ml_model_predict(report_data)
         try:
@@ -127,8 +129,7 @@ def create_report():
             return jsonify({'toxic': report_type == ReportType.TOXIC}), 200
 
         except Exception as e:
-            flash('An error occurred while adding the report.', 'error')
-            return jsonify({'toxic': False}), 500
+            return jsonify({'error': 'An error occurred while adding the report.'}), 500
 
     return render_template("./Reports/create_report.html", user=current_user)
 

@@ -32,7 +32,6 @@ Submit Report
         </button>
       </div>
       <div class="modal-body">
-        <!-- This content will be dynamically populated by JavaScript -->
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -41,40 +40,5 @@ Submit Report
   </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const reportForm = document.querySelector('form');
-    reportForm.addEventListener('submit', function(event) {
-        event.preventDefault(); // Prevent the form from submitting normally
-
-        const reportData = document.getElementById('report').value;
-
-        // Make an AJAX request to submit the form data
-        fetch(reportForm.action, {
-            method: 'POST',
-            body: new FormData(reportForm)
-        })
-        .then(response => response.json())
-        .then(data => {
-            const modalBody = document.querySelector('.modal-body');
-            if (data.toxic) {
-                modalBody.innerHTML = '<p class="text-danger">Malicious content detected in your report.</p>';
-            } else {
-                modalBody.innerHTML = '<p class="text-success">No malicious content found in your report.</p>';
-            }
-            $('#reportModal').modal('show');
-        })
-        .catch(error => console.error('Error:', error));
-    });
-
-    // Add event listener to redirect to reports list after closing the modal
-    $('#reportModal').on('hidden.bs.modal', function () {
-        window.location.href = "./reports";  // Adjust the URL as necessary
-    });
-
-    document.querySelector('.modal-footer .btn-secondary').addEventListener('click', function() {
-        window.location.href = "./reports";  // Adjust the URL as necessary
-    });
-});
-</script>
+<script src="{{ url_for('static', filename='js/create_report.js') }}"></script>
 {% endblock %}
