@@ -115,9 +115,10 @@ def create_report():
         if len(report_data) > 500:  # 500 characters as the max length
             return jsonify({'error': 'Content is too long. Please shorten your content and try again.'}), 400
 
-        if not isinstance(report_data, str) or not report_data.strip():
-            return jsonify({'error': 'Invalid content format. Only text-based content can be analyzed.'}), 400
-
+        is_valid, error_message = validate_report_content(report_data)
+        if not is_valid:
+            return jsonify({'error': error_message}), 400
+    
         report_type = ml_model_predict(report_data)
         try:
             new_report = Report(
@@ -225,3 +226,18 @@ def ml_model_predict(report_data):
     prediction = model.predict(transformed_data)
 
     return ReportType.TOXIC if prediction > 0.5 else ReportType.NON_TOXIC
+
+def validate_report_content(content):
+    # Check if the content is only numbers
+    if re.fullmatch(r'\d+', content):
+        return False, "Content should not consist of only numbers."
+    
+    # Check if the content is only special characters
+    if re.fullmatch(r'[^\w\s]+', content):
+        return False, "Content should not consist of only special characters."
+    
+    # Check for repeated words more than 3 times in a row
+    if re.search(r'\b(\w+)\b(?:\s+\1){2,}', content, re.IGNORECASE):
+        return False, "Content contains repeated words more than two times in a row."
+    
+    return True, ""

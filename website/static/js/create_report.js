@@ -4,12 +4,34 @@ document.addEventListener('DOMContentLoaded', function() {
         event.preventDefault(); // Prevent the form from submitting normally
 
         const reportData = document.getElementById('report').value;
-        //Perform client-side validation for content length
+
+        // Perform client-side validation for content length
         if (reportData.length > 500) { // 500 characters is the max allowed length
             showModal('Content is too long. Please shorten your content and try again.', 'text-danger');
             return;
         }
-        //AJAX request to submit the form data
+
+        // Check for invalid formats: only numbers, only special characters, or repeated words
+        const isOnlyNumbers = /^\d+$/.test(reportData);
+        const isOnlySpecialChars = /^[^\w\s]+$/.test(reportData); // Only non-word characters (special chars)
+        const hasRepeatedWords = /\b(\w+)\b(?:\s+\1){2,}/gi.test(reportData); // Detect more than 2 repeated words
+
+        if (isOnlyNumbers) {
+            showModal('Content should not consist of only numbers. Please revise your content.', 'text-danger');
+            return;
+        }
+
+        if (isOnlySpecialChars) {
+            showModal('Content should not consist of only special characters. Please revise your content.', 'text-danger');
+            return;
+        }
+
+        if (hasRepeatedWords) {
+            showModal('Content contains repeated words more than two times in a row. Please revise your content.', 'text-danger');
+            return;
+        }
+
+        // AJAX request to submit the form data
         fetch(reportForm.action, {
             method: 'POST',
             body: new FormData(reportForm)
@@ -17,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => {
             if (!response.ok) {
                 return response.json().then(data => {
-                    throw new Error(data.error || 'Unknown error occurred.');
+                    throw new Error('Unknown error occurred.');
                 });
             }
             return response.json();
@@ -44,10 +66,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add event listener to redirect to reports list after closing the modal
     $('#reportModal').on('hidden.bs.modal', function () {
-        window.location.href = "./reports";
+        const modalBodyText = document.querySelector('.modal-body p').textContent;
+        if (modalBodyText.includes('Malicious content detected') || modalBodyText.includes('No malicious content found')) {
+            window.location.href = "./reports";
+        }
     });
 
     document.querySelector('.modal-footer .btn-secondary').addEventListener('click', function() {
-        window.location.href = "./reports"; 
+        const modalBodyText = document.querySelector('.modal-body p').textContent;
+        if (modalBodyText.includes('Malicious content detected') || modalBodyText.includes('No malicious content found')) {
+            window.location.href = "./reports";
+        }
     });
 });
