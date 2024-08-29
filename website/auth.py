@@ -3,27 +3,55 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, login_required, logout_user, current_user
 from .models import User
+from datetime import datetime, timedelta
 
 auth = Blueprint('auth', __name__)
+
+MAX_ATTEMPTS = 5
+LOCKOUT_TIME = timedelta(minutes=15)  #lockout time - 15 minutes
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form.get('email').strip().lower()
         password = request.form.get('password')
-
+        
         user = User.objects(email=email).first()
         if user:
+            # Check if the user is locked out
+            if user.failed_login_attempts >= MAX_ATTEMPTS:
+                if user.last_failed_login and datetime.utcnow() - user.last_failed_login < LOCKOUT_TIME:
+                    remaining_lockout = LOCKOUT_TIME - (datetime.utcnow() - user.last_failed_login)
+                    flash(f'Account is locked. Try again in {int(remaining_lockout.total_seconds() // 60)} minutes.', category='error')
+                    return render_template("./Auth/login.html", user=current_user, email=email)
+
+                # Reset the attempts if the lockout period has passed
+                user.failed_login_attempts = 0
+                user.last_failed_login = None
+                user.save()
+
             if check_password_hash(user.password, password):
                 flash('Logged in successfully!', category='success')
                 login_user(user, remember=True)
+                # Reset failed attempts after successful login
+                user.failed_login_attempts = 0
+                user.last_failed_login = None
+                user.save()
                 return redirect(url_for('views.dashboard'))
             else:
-                flash('Incorrect password, try again.', category='error')
+                user.failed_login_attempts += 1
+                user.last_failed_login = datetime.utcnow()
+                user.save()
+
+                attempts_left = MAX_ATTEMPTS - user.failed_login_attempts
+                if attempts_left > 0:
+                    flash(f'Incorrect password. You have {attempts_left} attempts left.', category='error')
+                else:
+                    flash('Account is locked due to too many failed login attempts. Try again later.', category='error')
         else:
             flash('Email does not exist.', category='error')
 
-        # Pass the email and password back to the form in case of failure
+        # Pass the email back to the form in case of failure
         return render_template("./Auth/login.html", user=current_user, email=email)
 
     return render_template("./Auth/login.html", user=current_user)

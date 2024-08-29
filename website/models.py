@@ -1,6 +1,6 @@
 import datetime
 from flask_login import UserMixin
-from mongoengine import Document, StringField, ReferenceField, DateTimeField, ListField
+from mongoengine import Document, StringField, ReferenceField, DateTimeField, IntField
 
 class RuleType:
     KEYWORD = "keyword"
@@ -24,6 +24,8 @@ class User(Document, UserMixin):
     role = StringField(max_length=150)
     password = StringField(max_length=500)
     first_name = StringField(max_length=150)
+    failed_login_attempts = IntField(default=0)
+    last_failed_login = DateTimeField(default=None)
 
 class Rule(Document):
     meta = {'collection': 'rules'}
