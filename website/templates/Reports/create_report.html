@@ -66,6 +66,15 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => console.error('Error:', error));
     });
+
+    // Add event listener to redirect to reports list after closing the modal
+    $('#reportModal').on('hidden.bs.modal', function () {
+        window.location.href = "./reports";  // Adjust the URL as necessary
+    });
+
+    document.querySelector('.modal-footer .btn-secondary').addEventListener('click', function() {
+        window.location.href = "./reports";  // Adjust the URL as necessary
+    });
 });
 </script>
 {% endblock %}

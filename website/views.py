@@ -100,7 +100,7 @@ def delete_rule():
 
 
 # REPORTS
-@views.route('/', methods=['GET'])
+@views.route('/reports', methods=['GET'])
 @login_required
 def show_reports():
     reports = Report.objects(user_id=current_user.id)

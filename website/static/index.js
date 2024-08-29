@@ -6,7 +6,7 @@ function createReport(reportId) {
       "Content-Type": "application/json",
     },
   }).then((_res) => {
-    window.location.href = "/";
+    window.location.href = "/reports";
   });
 }
 
@@ -18,7 +18,7 @@ function deleteReport(reportId) {
       "Content-Type": "application/json",
     },
   }).then((_res) => {
-    window.location.href = "/";
+    window.location.href = "/reports";
   });
 }
 
@@ -30,7 +30,7 @@ function updateReport(reportId) {
       "Content-Type": "application/json",
     },
   }).then((_res) => {
-    window.location.href = "/";
+    window.location.href = "/reports";
   });
 }
 
