@@ -33,7 +33,14 @@ def create_rule():
             try:
                 new_rule = Rule(data=rule, data_type=data_type, user_id=current_user.id)
                 new_rule.save()
-                flash('Rule added!', category='success')
+                
+                # Re-evaluate all reports
+                reports = Report.objects(user_id=current_user.id)
+                for report in reports:
+                    new_report_type = ml_model_predict(report.data)
+                    report.update(report_type=new_report_type)
+                
+                flash('New rule created and reports updated!', category='success')
             except Exception as e:
                 flash('An error occurred while adding the rule.', category='error')
             return redirect(url_for('views.show_rules'))
