@@ -1,0 +1,20 @@
+.is-valid {
+    background-color: #d4edda; /* Light green background for valid input */
+    border-color: #28a745; /* Green border for valid input */
+}
+
+.is-invalid {
+    background-color: #f8d7da; /* Light red background for invalid input */
+    border-color: #dc3545; /* Red border for invalid input */
+}
+.progress-bar.bg-danger {
+    background-color: #dc3545;
+}
+
+.progress-bar.bg-warning {
+    background-color: #ffc107;
+}
+
+.progress-bar.bg-success {
+    background-color: #28a745;
+}

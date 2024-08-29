@@ -1,3 +1,4 @@
+import re
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, login_required, logout_user, current_user
@@ -39,6 +40,9 @@ def sign_up():
         password1 = request.form.get('password1')
         password2 = request.form.get('password2')
 
+        # Regular expression for a strong password
+        password_regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{7,}$'
+
         user = User.objects(email=email).first()
         if user:
             flash('Email already exists.', category='error')
@@ -48,8 +52,8 @@ def sign_up():
             flash('First name must be greater than 1 character.', category='error')
         elif password1 != password2:
             flash('Passwords don\'t match.', category='error')
-        elif len(password1) < 7:
-            flash('Password must be at least 7 characters.', category='error')
+        elif not re.match(password_regex, password1):
+            flash('Password must be at least 7 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.', category='error')
         else:
             new_user = User(
                 email=email,
