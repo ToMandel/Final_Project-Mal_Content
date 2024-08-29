@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const isOnlyNumbers = /^\d+$/.test(reportData);
         const isOnlySpecialChars = /^[^\w\s]+$/.test(reportData); // Only non-word characters (special chars)
         const hasRepeatedWords = /\b(\w+)\b(?:\s+\1){2,}/gi.test(reportData); // Detect more than 2 repeated words
+        const isOnlyUrl = /^(https?:\/\/[^\s]+)$/.test(reportData); // Detect if the input is only a URL
 
         if (isOnlyNumbers) {
             showModal('Content should not consist of only numbers. Please revise your content.', 'text-danger');
@@ -28,6 +29,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (hasRepeatedWords) {
             showModal('Content contains repeated words more than two times in a row. Please revise your content.', 'text-danger');
+            return;
+        }
+
+        if (isOnlyUrl) {
+            showModal('Content should not consist of only a URL. Please add more context to your report.', 'text-danger');
             return;
         }
 

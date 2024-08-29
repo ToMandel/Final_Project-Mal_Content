@@ -243,8 +243,11 @@ def validate_report_content(content):
     if re.fullmatch(r'[^\w\s]+', content):
         return False, "Content should not consist of only special characters."
     
-    # Check for repeated words more than 3 times in a row
+    # Check for repeated words more than two times in a row
     if re.search(r'\b(\w+)\b(?:\s+\1){2,}', content, re.IGNORECASE):
         return False, "Content contains repeated words more than two times in a row."
-    
+      
+    # Check if the content is only a URL
+    if re.fullmatch(r'https?:\/\/[^\s]+', content):
+        return False, "Content should not consist of only a URL."
     return True, ""
