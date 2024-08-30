@@ -2,9 +2,11 @@ from flask import Blueprint, json, render_template, request, flash, redirect, ur
 from flask_login import login_required, current_user
 from .models import User, Report, Rule, RuleType, ReportType
 import re
+from .encryption import EncryptionManager
+
+encryption_manager = EncryptionManager()
 
 views = Blueprint('views', __name__)
-
 # Dashboard route
 @views.route('/dashboard', methods=['GET'])
 @login_required
@@ -16,7 +18,13 @@ def dashboard():
 @login_required
 def show_rules():
     rules = Rule.objects(user_id=current_user.id)
+    
+    # Decrypt the rule data before displaying
+    for rule in rules:
+        rule.data = encryption_manager.decrypt(rule.data)
+    
     return render_template("./Rules/rules.html", user=current_user, rules=rules)
+
 
 @views.route('/create-rule', methods=['GET', 'POST'])
 @login_required
@@ -31,13 +39,16 @@ def create_rule():
             flash('Invalid rule type!', category='error')
         else:
             try:
-                new_rule = Rule(data=rule, data_type=data_type, user_id=current_user.id)
+                # Encrypt the rule data before saving
+                encrypted_rule = encryption_manager.encrypt(rule)
+                new_rule = Rule(data=encrypted_rule, data_type=data_type, user_id=current_user.id)
                 new_rule.save()
-                
-                # Re-evaluate all reports
+
+                # Re-evaluate all reports (encryption not required for this step)
                 reports = Report.objects(user_id=current_user.id)
                 for report in reports:
-                    new_report_type = ml_model_predict(report.data)
+                    decrypted_report_data = encryption_manager.decrypt(report.data)
+                    new_report_type = ml_model_predict(decrypted_report_data, encryption_manager)
                     report.update(report_type=new_report_type)
                 
                 flash('New rule created and reports updated!', category='success')
@@ -47,6 +58,7 @@ def create_rule():
 
     return render_template("./Rules/create_rule.html", user=current_user, RuleType=RuleType)
 
+
 @views.route('/update-rule/<rule_id>', methods=['GET', 'POST'])
 @login_required
 def update_rule(rule_id):
@@ -54,6 +66,9 @@ def update_rule(rule_id):
     if not rule:
         flash('Rule not found!', category='error')
         return redirect(url_for('views.show_rules'))
+
+    # Decrypt the rule data before displaying for editing
+    decrypted_rule_data = encryption_manager.decrypt(rule.data)
 
     if request.method == 'POST':
         new_data = request.form.get('rule')
@@ -65,13 +80,17 @@ def update_rule(rule_id):
             flash('Invalid rule type!', category='error')
         else:
             try:
-                # Update the rule
-                rule.update(data=new_data, data_type=new_data_type)
+                # Encrypt the updated rule data
+                encrypted_new_data = encryption_manager.encrypt(new_data)
+                
+                # Update the rule with encrypted data
+                rule.update(data=encrypted_new_data, data_type=new_data_type)
                 
                 # Re-evaluate all reports
                 reports = Report.objects(user_id=current_user.id)
                 for report in reports:
-                    new_report_type = ml_model_predict(report.data)
+                    decrypted_report_data = encryption_manager.decrypt(report.data)
+                    new_report_type = ml_model_predict(decrypted_report_data, encryption_manager)
                     report.update(report_type=new_report_type)
                 
                 flash('Rule and reports updated!', category='success')
@@ -79,7 +98,8 @@ def update_rule(rule_id):
                 flash('An error occurred while updating the rule and reports.', category='error')
             return redirect(url_for('views.show_rules'))
 
-    return render_template("./Rules/update_rule.html", user=current_user, rule=rule)
+    return render_template("./Rules/update_rule.html", user=current_user, rule=rule, decrypted_data=decrypted_rule_data)
+
 
 @views.route('/delete-rule', methods=['POST'])
 @login_required
@@ -93,7 +113,8 @@ def delete_rule():
             # Re-evaluate all reports
             reports = Report.objects(user_id=current_user.id)
             for report in reports:
-                new_report_type = ml_model_predict(report.data)
+                decrypted_report_data = encryption_manager.decrypt(report.data)
+                new_report_type = ml_model_predict(decrypted_report_data, encryption_manager)
                 report.update(report_type=new_report_type)
 
             flash('Rule deleted', category='success')
@@ -111,7 +132,13 @@ def delete_rule():
 @login_required
 def show_reports():
     reports = Report.objects(user_id=current_user.id)
+    
+    # Decrypt the report data before displaying
+    for report in reports:
+        report.data = encryption_manager.decrypt(report.data)
+    
     return render_template("./Reports/reports.html", user=current_user, reports=reports)
+
 
 @views.route('/create-report', methods=['GET', 'POST'])
 @login_required
@@ -126,10 +153,14 @@ def create_report():
         if not is_valid:
             return jsonify({'error': error_message}), 400
     
-        report_type = ml_model_predict(report_data)
+        
+        report_type = ml_model_predict(report_data, encryption_manager)
+
+        # Encrypt the report data before saving
+        encrypted_report_data = encryption_manager.encrypt(report_data)
         try:
             new_report = Report(
-                data=report_data, 
+                data=encrypted_report_data,
                 report_type=report_type,  
                 user_id=current_user.id
             )
@@ -141,6 +172,7 @@ def create_report():
 
     return render_template("./Reports/create_report.html", user=current_user)
 
+
 @views.route('/update-report/<report_id>', methods=['GET', 'POST'])
 @login_required
 def update_report(report_id):
@@ -149,6 +181,9 @@ def update_report(report_id):
         flash('Report not found!', category='error')
         return redirect(url_for('views.show_reports'))
 
+    # Decrypt the report data before displaying for editing
+    decrypted_report_data = encryption_manager.decrypt(report.data)
+
     if request.method == 'POST':
         new_data = request.form.get('report')
         if not new_data or len(new_data.strip()) < 1:
@@ -156,16 +191,18 @@ def update_report(report_id):
         else:
             try:
                 # Re-evaluate the report based on updated rules
-                new_report_type = ml_model_predict(new_data)
-                
+                new_report_type = ml_model_predict(new_data, encryption_manager)
+                # Encrypt the updated report data
+                encrypted_new_data = encryption_manager.encrypt(new_data)
                 # Update the report with the new data and report type
-                report.update(data=new_data, report_type=new_report_type)
+                report.update(data=encrypted_new_data, report_type=new_report_type)
                 flash('Report updated and re-evaluated!', category='success')
             except Exception as e:
                 flash('An error occurred while updating the report.', category='error')
             return redirect(url_for('views.show_reports'))
     
-    return render_template("./Reports/update_report.html", user=current_user, report=report)
+    return render_template("./Reports/update_report.html", user=current_user, report=report, decrypted_data=decrypted_report_data)
+
 
 
 @views.route('/delete-report', methods=['POST', 'DELETE'])
@@ -202,27 +239,32 @@ def clean_text(text):
     text = text.strip()
     return text
 
-def apply_rules(report_data):
+def apply_rules(report_data, encryption_manager):
+    # Retrieve all rules
     keyword_rules = Rule.objects(data_type=RuleType.KEYWORD)
     phrase_rules = Rule.objects(data_type=RuleType.PHRASE)
     contextual_rules = Rule.objects(data_type=RuleType.CONTEXTUAL)
 
+    # Decrypt and apply each rule
     for rule in keyword_rules:
-        if rule.data.lower() in report_data.lower():
+        decrypted_rule_data = encryption_manager.decrypt(rule.data)
+        if decrypted_rule_data.lower() in report_data.lower():
             return True
 
     for rule in phrase_rules:
-        if rule.data.lower() in report_data.lower():
+        decrypted_rule_data = encryption_manager.decrypt(rule.data)
+        if decrypted_rule_data.lower() in report_data.lower():
             return True
 
     for rule in contextual_rules:
-        if rule.data.lower() in report_data.lower():
+        decrypted_rule_data = encryption_manager.decrypt(rule.data)
+        if decrypted_rule_data.lower() in report_data.lower():
             return True
 
     return False
 
-def ml_model_predict(report_data):
-    if apply_rules(report_data):
+def ml_model_predict(report_data, encryption_manager):
+    if apply_rules(report_data, encryption_manager):
         return ReportType.TOXIC
 
     model = current_app.config['ML_MODEL']

@@ -10,7 +10,7 @@ Update Report
 <form method="POST" action="{{ url_for('views.update_report', report_id=report.id) }}">
   <div class="form-group">
     <label for="current-report">Current Report</label>
-    <textarea id="current-report" class="form-control" rows="2" readonly>{{ report.data }}</textarea>
+    <textarea id="current-report" class="form-control" rows="2" readonly>{{ decrypted_data }}</textarea>
   </div>
   <div class="form-group">
     <label for="new-report">New Content</label>

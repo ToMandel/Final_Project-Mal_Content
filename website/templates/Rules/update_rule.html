@@ -10,7 +10,7 @@ Update Rule
 <form method="POST" action="{{ url_for('views.update_rule', rule_id=rule.id) }}">
   <div class="form-group">
     <label for="current-rule">Current Rule</label>
-    <textarea id="current-rule" class="form-control" rows="2" readonly>{{ rule.data }}</textarea>
+    <textarea id="current-rule" class="form-control" rows="2" readonly>{{ decrypted_data }}</textarea>
   </div>
   <div class="form-group">
     <label for="new-rule">New Content</label>
