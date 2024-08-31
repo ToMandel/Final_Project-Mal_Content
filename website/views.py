@@ -80,10 +80,7 @@ def update_rule(rule_id):
             flash('Invalid rule type!', category='error')
         else:
             try:
-                # Encrypt the updated rule data
                 encrypted_new_data = encryption_manager.encrypt(new_data)
-                
-                # Update the rule with encrypted data
                 rule.update(data=encrypted_new_data, data_type=new_data_type)
                 
                 # Re-evaluate all reports
